@@ -2,18 +2,18 @@ from flask import Flask, request, jsonify
 import yt_dlp
 import logging
 
+# បើកការបង្ហាញ Log នៅក្នុង Console របស់ Render
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
 app = Flask(__name__)
 
-# Configure logging to print to console
-logging.basicConfig(level=logging.INFO)
-
-# This will run before every request to log its details
+# Function នេះនឹងព្រីនរាល់ Request ទាំងអស់ដែលចូលមកកាន់ Server
 @app.before_request
 def log_request_info():
-    app.logger.info(f"--- Incoming Request ---")
-    app.logger.info(f"URL: {request.url}")
-    app.logger.info(f"Method: {request.method}")
-    app.logger.info(f"Headers:\n{request.headers}")
+    logger.info(f"--- Incoming Request ---")
+    logger.info(f"URL: {request.url}")
+    logger.info(f"Method: {request.method}")
 
 @app.route('/', methods=['GET'])
 def home():
@@ -25,7 +25,8 @@ def extract_video():
     if not url:
         return jsonify({"error": "សូមបញ្ចូល URL"}), 400
 
-    # កំណត់ yt-dlp ដើម្បីទាញយកតែ Link MP4 (មិន download ចូល server ទេ)
+    logger.info(f"Extracting video for URL: {url}")
+
     ydl_opts = {
         'format': 'best',
         'quiet': True,
@@ -38,13 +39,15 @@ def extract_video():
             video_url = info.get('url', '')
             title = info.get('title', 'Video')
             
+            logger.info(f"Successfully extracted: {title}")
+            
             return jsonify({
                 "success": True,
                 "title": title,
-                "video_url": video_url # នេះជា Link MP4 សុទ្ធដែល Android អាច Download បាន
+                "video_url": video_url 
             })
     except Exception as e:
-        app.logger.error(f"Extraction failed: {str(e)}")
+        logger.error(f"Error extracting video: {str(e)}")
         return jsonify({
             "success": False,
             "error": str(e)
